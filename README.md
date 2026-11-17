@@ -1,235 +1,181 @@
-# Latent Visual Reasoning
+# LATENT-SIGHT
+## Bounding-Box Guided Latent Visual Reasoning for Vision-Language Models
 
-This repository contains a script for training [Latent Visual Reasoning](https://www.arxiv.org/abs/2509.24251) based on [Qwen2.5-VL](https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct).
+LATENT-SIGHT explores region-guided visual reasoning in Vision-Language Models (VLMs). It combines interactive Region of Interest (ROI) selection, visual token mapping and a latent visual reasoning pipeline to investigate how selected image regions can support targeted visual understanding.
 
-## Update
+### Architecture
 
-- [2025/10/02] 🔥Code base released.
+- Baseline model: SmolVLM-256M-Instruct
+- Visual processor: Qwen2.5-VL processor
+- Backend: FastAPI
+- Frontend: HTML, CSS and JavaScript
+- ROI selection: Interactive bounding-box selection
+- Visual token mapping: Image-region-to-token mapping
+- LVR components: Dataset processing, visual feature integration and custom forward-pass implementation
+- Evaluation dataset: 20 annotated images
 
-## Table of Contents
+### Implemented Features
 
-- [Latent Visual Reasoning](#latent-visual-reasoning)
-  - [Update](#update)
-  - [Table of Contents](#table-of-contents)
-  - [Supported Features](#supported-features)
-  - [Environments](#environments)
-  - [Model Weights](#model-weights)
-  - [Dataset Preparation](#dataset-preparation)
-  - [Training LVR](#training-lvr)
-    - [Stage-1 SFT](#full-finetuning)
-    - [Stage-2 GRPO<sub>latent</sub>](#stage-2-GRPO<sub>latent</sub>)
-  - [Inference](#inference)
-  - [TODO](#todo)
-  - [Known Issues](#known-issues)
-  - [License](#license)
-  - [Citation](#citation)
-  - [Acknowledgement](#acknowledgement)
+- Image upload and visualization.
+- Interactive bounding-box selection.
+- ROI-to-visual-token mapping.
+- Visual token-grid highlighting.
+- Baseline image question answering.
+- Dataset evaluation and error analysis.
+- Evaluation result visualization.
 
-## Supported Features
+### Experimental Evaluation
 
-- Deepspeed
-- Full-finetuning
-- GRPO<sub>latent</sub>
+The project includes baseline and dataset evaluation experiments.
 
+Evaluation components include:
 
-### Environments
+- Baseline response evaluation.
+- Text-overlap precision, recall and F1 metrics.
+- Category-wise performance analysis.
+- Manual response review.
+- Error analysis.
+- Inference-time visualization.
 
-```bash
-conda env create -f environment.yaml
-conda activate train
-pip install qwen-vl-utils
-pip install flash-attn --no-build-isolation
-```
+Detailed experimental outputs are available in the `outputs/` directory.
 
-**Note:** You should install flash-attn after installing the other packages.<br>
-**Note:** This project is forked from [Qwen2-VL-Finetune](https://github.com/2U1/Qwen2-VL-Finetune) where you can find more instructions on environments.
+The current evaluation is preliminary and does not establish an accuracy improvement from latent visual reasoning.
 
-## Model Weights
-Model checkpoints are accessible from [vincentleebang/LVR-7B](https://huggingface.co/vincentleebang/LVR-7B)
+### Setup
 
-## Dataset Preparation
-
-### Data ###
-Please download the training data through [this link](https://drive.google.com/file/d/1RUbKMQU3H7u8iWDqpDv8aiYDMlUaDIlE/view?usp=sharing) where we provide formatted training data for Latent Visual Reasoning.
-
-To train LVR with your own data: The script requires a dataset formatted according to the LLaVA specification. The dataset should be a JSON file where each entry contains information about conversations and images. Ensure that the image paths in the dataset match the provided `--image_folder`.<br>
-
-**Please see the example below and follow format your data. The \<image\> and \<lvr\> token are placeholders for data collation.**<br>
-
-<details>
-<summary>Example for Stage-1 SFT dataset</summary>
-
-```json
-[
-  {
-    "dataset": "flickr30k", 
-    "split": "train", 
-    "question_id": 31593, 
-    "image": ["viscot/flickr30k/2618322793.jpg"], 
-    "conversations": [
-          {
-            "from": "human", 
-            "value": "<image>\nCan you describe the lower apparel of the child on the swing?\nProvide a short and direct response."
-          }, 
-          {
-            "from": "gpt", "value": "<lvr>\n<answer> The child on the swing is wearing dark blue denim shorts. </answer>"
-          }
-    ], 
-    "bboxes": [[0.382, 0.456, 0.718, 0.656]]
-  }
-  ...
-]
-```
-
-</details>
-
-
-<details>
-<summary>Example for Stage-2 GRPO<sub>latent</sub> dataset</summary>
-
-```json
-[
-  {
-    "dataset": "ViRL39K", 
-    "id": "MMK12-abc85ebc-7a73-4d55-80a8-ca256f84069c", 
-    "image": "ViRL39K/MMK12-abc85ebc-7a73-4d55-80a8-ca256f84069c-0.png", 
-    "conversations": [
-      {
-        "from": "human", 
-        "value": "As shown in the figure, $$AB \\perp CD$$ at point $$C$$, $$CE \\perp CF$$, then there are ___ pairs of complementary angles in the figure."
-      }, 
-      {
-        "from": "gpt", 
-        "value": "<answer>4</answer>"
-      }
-    ]
-  }
-  ...
-]
-```
-
-**Note:** You should remove all `<image>`tokens in your dataset. It works a bit different with other training methods.
-
-</details>
-
-<br><br>
-
-## Training LVR
-
-**Note:** We use a data packing strategy adapted from InternVL, where short instances are packed together while long instances are left unaltered to maximize GPU utilization. You can enable this feature by setting `--enable_data_packing True`.<br><br>
-**Tip:** The 3D convolution module in Qwen2.5-VL's visual encoding process can introduce NaN due to numeric stability. Please refer to src/train/monkey_patch_patch_emb.py.
-
-To run the training script, use the following command:
-
-### Stage-1 SFT
+1. Install a compatible Python environment.
+2. Clone the repository.
+3. Create and activate a virtual environment.
+4. Install dependencies from `requirements.txt`.
+5. Install website-specific dependencies.
+6. Start the FastAPI application.
 
 ```bash
-bash scripts/finetune_lvr_stage1_7b.sh
+git clone https://github.com/cvsudharshan0401-lgtm/LATENT-SIGHT.git
+
+cd LATENT-SIGHT
+
+python -m venv .venv
+
+source .venv/bin/activate
+
+pip install -r requirements.txt
+
+pip install -r website/requirements.txt
 ```
 
-<details>
-<summary>Training arguments</summary>
-
-- `--deepspeed` (str): Path to DeepSpeed config file (default: "scripts/zero2.json").
-- `--data_path` (str): Path to the LLaVA formatted training data (a JSON file). **(Required)**
-- `--image_folder` (str): Path to the images folder as referenced in the LLaVA formatted training data. **(Required)**
-- `--model_id` (str): Path to the Qwen2-VL model. **(Required)**
-- `--output_dir` (str): Output directory for model checkpoints
-- `--num_train_epochs` (int): Number of training epochs (default: 1).
-- `--per_device_train_batch_size` (int): Training batch size per GPU per forwarding step.
-- `--gradient_accumulation_steps` (int): Gradient accumulation steps (default: 4).
-- `--freeze_vision_tower` (bool): Option to freeze vision_model (default: False).
-- `--freeze_llm` (bool): Option to freeze LLM (default: False).
-- `--freeze_merger` (bool): Option to tune projector (default: False).
-- `--vision_lr` (float): Learning rate for vision_model.
-- `--merger_lr` (float): Learning rate for merger(projector).
-- `--learning_rate` (float): Learning rate for language module.
-- `--bf16` (bool): Option for using bfloat16.
-- `--fp16` (bool): Option for using fp16.
-- `--image_min_pixels` (int): Option for minimum input tokens for image.
-- `--image_max_pixles` (int): Option for maximum maxmimum tokens for image.
-- `--max_seq_length` (int): Maximum sequence length (default: 32K).
-- `--bits` (int): Quantization bits (default: 16).
-- `--disable_flash_attn2` (bool): Disable Flash Attention 2.
-- `--report_to` (str): Reporting tool (choices: 'tensorboard', 'wandb', 'none') (default: 'tensorboard').
-- `--logging_dir` (str): Logging directory (default: "./tf-logs").
-- `--logging_steps` (int): Logging steps (default: 1).
-- `--dataloader_num_workers` (int): Number of data loader workers (default: 4).
-- `--precompute_ref_log_probs` (bool): Wheter to precompute the reference log probs (default: False)
-- `--beta` (float): The beta value for DPO (default: 0.1)
-
-</details>
-
-### Stage-2 GRPO<sub>latent</sub>
+### Run the Website
 
 ```bash
-bash scripts/finetune_lvr_stage2_7b.sh
+cd website
+
+uvicorn app:app --reload
 ```
 
+Open the application:
 
-<br>
-
-### Prerequisites
-
-| What                      | Where                       | Notes                                                                                       |
-| ------------------------- | --------------------------- | ------------------------------------------------------------------------------------------- |
-| **Reward functions**      | `src/train/reward_funcs.py` | Add any function that ends with `_reward`. The training script picks them up automatically. |
-| **Custom system prompts** | `src/constants.py`          | Append your own prompt strings here.                                                        |
-
-You could start training using this script.<br>
-Before training, **Please check the dataset format once more.** The format is a bit different from other training methods.
-Most of the training arugments are same as SFT, but few other arguments are added for GRPO training.
-
-<details>
-<summary>Training arguments</summary>
-
-- `--temperature` (float): Generation config (default: 0.9)  <- LVR is quite sensitive to temperature during RL. Too large or too small temperature may 
-- `--top_p` (float): Generation config (default: 1.0)
-- `--top_k` (int): Generation config (default: 50)
-- `--min_p` (float): Generation config (default: None)
-- `--repetition_penalty` (float): Generation config (default: 1.0)
-- `--max_completion_length` (int): Max length for the completion (default: 256)
-- `--max_prompt_length` (int): Max length for the prompt (default: 512)
-- `--beta` (float): KL Coefficient. (default: 0.04)
-
-</details>
-
-**Note:** **Liger GRPO loss** and **vLLM back-end** are not yet supported. Both will be added soon.
-
-## Inference
-
-We provide a evaluation file in evaluation/ which by default uses max-step decoding. All variants of decoding strategies are in src/model/qwen_lvr_model.py for reference.
-
-
-## TODO
-
-- [ ] Upload docker file for easy deployment
-
-## Known Issues
-
-- Transformer version mismatch: the RL bode base may require transformers>=4.54.0 where they updated the abstract model architechture.
-
-## License
-
-This project is licensed under the Apache-2.0 License. See the [LICENSE](LICENSE) file for details.
-
-## Citation
-
-If you find this repository useful in your project, please consider giving a :star: and citing:
-
-```bibtex
-@misc{li2025lvr,
-      title={Latent Visual Reasoning}, 
-      author={Bangzheng Li and Ximeng Sun and Jiang Liu and Ze Wang and Jialian Wu and Xiaodong Yu and Hao Chen and Emad Barsoum and Muhao Chen and Zicheng Liu},
-      year={2025},
-      journal={arXiv preprint arXiv:2509.24251}
-}
+```text
+http://127.0.0.1:8000
 ```
 
-## Acknowledgement
+API documentation:
 
-This project is based on
+```text
+http://127.0.0.1:8000/docs
+```
 
-- [Qwen2-VL-Finetune](https://github.com/2U1/Qwen2-VL-Finetune): An open-source project for finetuning Qwen-2-VL/Qwen-2.5VL models.
-- [Qwen2.5-VL](https://github.com/QwenLM/Qwen3-VL): MLLM series from Qwen family. 
-- [InternVL](https://github.com/OpenGVLab/InternVL/tree/main): Open-source MLLM family by Shanghai AI Lab. They also opensourced awesome tools for training MLLMs.
+### Main Components
+
+**Website**
+- `website/app.py`
+- `website/model_service.py`
+- `website/static/script.js`
+
+**ROI and Visual Mapping**
+- `mac_demo/annotate_roi.py`
+- `mac_demo/feature_comparison.py`
+- `mac_demo/verify_roi_alignment.py`
+- `mac_demo/validate_lvr_mapping.py`
+
+**Dataset and Model Integration**
+- `src/dataset/lvr_sft_dataset.py`
+- `src/dataset/lvr_sft_dataset_packed.py`
+- `src/model/qwen_lvr_model.py`
+- `src/train/train_lvr.py`
+
+**Evaluation**
+- `evaluation/baseline_evaluation.py`
+- `evaluation/dataset_evaluation.py`
+- `evaluation/advanced_metrics.py`
+- `evaluation/final_error_analysis.py`
+- `evaluation/visualize_results.py`
+
+### Project Structure
+
+```text
+LATENT-SIGHT/
+├── website/
+│   ├── app.py
+│   ├── model_service.py
+│   ├── static/
+│   └── templates/
+│
+├── src/
+│   ├── dataset/
+│   ├── model/
+│   ├── train/
+│   └── trainer/
+│
+├── mac_demo/
+│   ├── data/
+│   ├── images/
+│   ├── outputs/
+│   └── testing scripts
+│
+├── evaluation/
+│   ├── dataset/
+│   └── evaluation scripts
+│
+├── outputs/
+│   ├── baseline_evaluation/
+│   └── dataset_evaluation/
+│
+├── research/
+├── scripts/
+├── requirements.txt
+├── environment.yaml
+└── README.md
+```
+
+### Model Artifacts
+
+The repository contains ROI feature comparison outputs, token-mapping experiments and evaluation results.
+
+Full Qwen2.5-VL-7B model weights and a trained custom LVR checkpoint are not included. Full-scale model training remains future work.
+
+### Hardware
+
+The development and lightweight validation environment includes:
+
+- Apple MacBook Air M3
+- 8 GB unified memory
+- macOS
+- Python virtual environment
+
+The Mac environment is used for website development, processor-level token mapping and lightweight validation. Full-scale Qwen2.5-VL-7B training requires suitable GPU hardware.
+
+### Dataset
+
+A 20-image annotated evaluation dataset is included in `evaluation/dataset/`.
+
+Additional ROI annotations and experimental data are available in `mac_demo/data/`.
+
+### Future Work
+
+- Complete end-to-end LVR model integration.
+- Validate the custom model forward pass.
+- Perform full-scale model training on GPU hardware.
+- Expand evaluation datasets and benchmarks.
+- Compare ROI-guided reasoning against baseline approaches.
+- Investigate adaptive visual reasoning budgets.
+
